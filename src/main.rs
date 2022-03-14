@@ -29,11 +29,12 @@ fn main() {
     for path in paths {
         let table = read_sql_file(&path.unwrap().path().display().to_string());
 
-        println!("Table name: {}", table.name);
-        let (matched_columns, unmatched_columns) = matching_columns(table, target_table.clone());
+        println!("src table name: {}", table.name);
+        let (matched_columns, src_missing_columns, dest_missing_columns) = matching_columns(table, target_table.clone());
 
-        println!("UNMATCHED COLUMNS: {}", unmatched_columns.join(",\n"));
-        println!("MATCHED COLUMNS: {}", matched_columns.join(",\n"));
+        println!("  SRC MISSING COLUMNS: \n    {}", src_missing_columns.join(",\n    "));
+        println!("  DEST MISSING COLUMNS: \n    {}", dest_missing_columns.join(",\n    "));
+        println!("  MATCHED COLUMNS: \n    {}", matched_columns.join(",\n    "));
     }
 }
 
@@ -72,23 +73,24 @@ fn parse_dll(dll:String) -> Vec<String> {
     return columns
 }
 
-fn matching_columns(src_table: Table, dest_table: Table) -> (Vec<String>, Vec<String>) {
+fn matching_columns(src_table: Table, dest_table: Table) -> (Vec<String>, Vec<String>, Vec<String>) {
     let mut matched_columns = Vec::new();
-    let mut unmatched_columns = Vec::new();
+    let mut src_missing_columns = Vec::new();
+    let mut dest_missing_columns = Vec::new();
 
     for src_col in src_table.columns.clone() {
         if dest_table.columns.contains(&src_col) {
             matched_columns.push(src_col);
         } else {
-            unmatched_columns.push(src_col);
+            dest_missing_columns.push(src_col);
         }
     }
 
     for dest_col in dest_table.columns {
         if !src_table.columns.contains(&dest_col) {
-            unmatched_columns.push(dest_col);
+            src_missing_columns.push(dest_col);
         }
     }
 
-    return (matched_columns, unmatched_columns);
+    return (matched_columns, src_missing_columns, dest_missing_columns);
 }
